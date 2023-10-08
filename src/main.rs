@@ -84,7 +84,7 @@ fn handle_client(mut stream: TcpStream) {
                 let file = read_to_string(&file_path).unwrap();
                 format!("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",file.len(),file)
             } else {
-                format!("HTTP/1.1 400 Not Found\r\n\r\n")
+                format!("HTTP/1.1 404 Not Found\r\n\r\n")
             }
         },
         _ => "HTTP/1.1 404 Not Found\r\n\r\n".to_string(),
