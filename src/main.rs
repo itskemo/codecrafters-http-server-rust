@@ -3,6 +3,9 @@ use std::{
     net::{TcpListener, TcpStream}, collections::HashMap,
 };
 use std::thread;
+use std::env;
+use std::fs::read_to_string;
+
 
 const ADDR: &str = "127.0.0.1:4221";
 
@@ -45,11 +48,11 @@ fn get_header(request: &str) -> HashMap<String, String> {
     header
 }
 
-
 fn handle_client(mut stream: TcpStream) {
     let request = parse_request(&mut stream);
     let path = get_path(&request);
     let header = get_header(&request);
+    let args: Vec<String> = env::args().collect();
 
     let response = match path[1] {
         "" => "HTTP/1.1 200 OK\r\n\r\n".to_string(),
@@ -67,6 +70,22 @@ fn handle_client(mut stream: TcpStream) {
         "user-agent" => {
             let agent = &header["User-Agent"];
             format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", agent.len(), agent)
+        },
+        "files" => {
+            let directory = if &args[2].clone() == "/" || &args[2].clone() == "" {
+                env::current_dir().unwrap()
+            } else {
+                env::current_dir().unwrap().join(&args[2].clone())
+            };
+            let file_path = directory.join(path[2]);
+            println!("working file {:?}", &file_path);
+
+            if std::path::Path::new(&file_path).exists() {
+                let file = read_to_string(&file_path).unwrap();
+                format!("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",file.len(),file)
+            } else {
+                format!("HTTP/1.1 400 Not Found\r\n\r\n")
+            }
         },
         _ => "HTTP/1.1 404 Not Found\r\n\r\n".to_string(),
     };
