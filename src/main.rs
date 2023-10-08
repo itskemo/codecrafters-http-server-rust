@@ -9,7 +9,6 @@ use std::fs::File;
 
 
 const ADDR: &str = "127.0.0.1:4221";
-const NOT_FOUND_RESPONSE: String = "HTTP/1.1 404 Not Found\r\n\r\n".to_string();
 
 fn parse_request(stream: &mut TcpStream) -> String {
     let mut buffer: [u8;512] = [0;512];
@@ -92,7 +91,7 @@ fn handle_client(mut stream: TcpStream) {
 
                     format!("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",file.len(),file)
                 } else {
-                    NOT_FOUND_RESPONSE
+                    "HTTP/1.1 404 Not Found\r\n\r\n".to_string()
                 }
             } else if method[0] == "POST" {
                 let file_content: Vec<&str> = request.split("\r\n\r\n").collect();
@@ -102,11 +101,11 @@ fn handle_client(mut stream: TcpStream) {
 
                 "HTTP/1.1 201 Created\r\n\r\n".to_string()
             } else {
-                NOT_FOUND_RESPONSE
+                "HTTP/1.1 404 Not Found\r\n\r\n".to_string()
             }
 
         },
-        _ => NOT_FOUND_RESPONSE
+        _ => "HTTP/1.1 404 Not Found\r\n\r\n".to_string()
     };
 
     stream.write_all(response.as_bytes()).unwrap();
