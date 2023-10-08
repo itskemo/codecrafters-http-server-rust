@@ -5,9 +5,11 @@ use std::{
 use std::thread;
 use std::env;
 use std::fs::read_to_string;
+use std::fs::File;
 
 
 const ADDR: &str = "127.0.0.1:4221";
+const NOT_FOUND_RESPONSE: String = "HTTP/1.1 404 Not Found\r\n\r\n".to_string();
 
 fn parse_request(stream: &mut TcpStream) -> String {
     let mut buffer: [u8;512] = [0;512];
@@ -20,7 +22,7 @@ fn get_path(request: &str) -> Vec<&str> {
     let lines = request.split("\r\n");
     let mut path: Vec<&str> = Vec::new();
     for line in lines {
-        if line.starts_with("GET") {
+        if line.starts_with("GET") || line.starts_with("POST") {
             let mut path_string = line.split(" ").nth(1).unwrap();
             path_string = path_string.trim();
 
@@ -37,7 +39,7 @@ fn get_header(request: &str) -> HashMap<String, String> {
     let lines = request.split("\r\n");
 
     for line in lines {
-        if !line.starts_with("GET") {
+        if !line.starts_with("GET") || !line.starts_with("POST") {
             let key_value: Vec<&str> = line.split(": ").collect();
 
             if key_value.len() > 1 {
@@ -77,17 +79,34 @@ fn handle_client(mut stream: TcpStream) {
             } else {
                 env::current_dir().unwrap().join(&args[2].clone())
             };
+
             let file_path = directory.join(path[2]);
+
             println!("working file {:?}", &file_path);
 
-            if std::path::Path::new(&file_path).exists() {
-                let file = read_to_string(&file_path).unwrap();
-                format!("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",file.len(),file)
+            let method: Vec<&str> = request.split(" ").collect();
+
+            if method[0] == "GET" {
+                if std::path::Path::new(&file_path).exists() {
+                    let file = read_to_string(&file_path).unwrap();
+
+                    format!("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",file.len(),file)
+                } else {
+                    NOT_FOUND_RESPONSE
+                }
+            } else if method[0] == "POST" {
+                let file_content: Vec<&str> = request.split("\r\n\r\n").collect();
+                let mut file = File::create(&file_path).expect("could not create file");
+
+                file.write_all(file_content[1].as_bytes()).expect("could not write to file");
+
+                "HTTP/1.1 201 Created\r\n\r\n".to_string()
             } else {
-                format!("HTTP/1.1 404 Not Found\r\n\r\n")
+                NOT_FOUND_RESPONSE
             }
+
         },
-        _ => "HTTP/1.1 404 Not Found\r\n\r\n".to_string(),
+        _ => NOT_FOUND_RESPONSE
     };
 
     stream.write_all(response.as_bytes()).unwrap();
