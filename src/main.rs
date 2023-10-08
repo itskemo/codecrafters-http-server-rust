@@ -26,6 +26,10 @@ fn main() {
 
                 if chunks[1] == "/" {
                     stream.write_all(b"HTTP/1.1 200 OK\r\n\r\n").unwrap();
+                } else if chunks[1].contains("/echo/") {
+                    let content = chunks[1].replace("/echo/", "");
+                    let result = format!("{}{}{}{}", "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ", content.len(), "\r\n\r\n", content);
+                    stream.write_all(result.as_bytes()).unwrap();
                 } else {
                     stream.write_all(b"HTTP/1.1 404 Not Found\r\n\r\n").unwrap();
                 }
