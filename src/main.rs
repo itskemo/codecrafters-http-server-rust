@@ -11,7 +11,7 @@ use std::fs::File;
 const ADDR: &str = "127.0.0.1:4221";
 
 fn parse_request(stream: &mut TcpStream) -> String {
-    let mut buffer: [u8;512] = [0;512];
+    let mut buffer: [u8;2048] = [0;2048];
     let bytes_read = stream.read(&mut buffer).unwrap();
     let request = String::from_utf8_lossy(&buffer[..bytes_read]);
     request.to_string()
