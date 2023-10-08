@@ -61,11 +61,12 @@ fn handle_client(mut stream: TcpStream) {
                 echo += "/";
                 echo += sub;
             }
-
+            println!("echo {}",echo);
             format!("HTTP/1.1 200 OK\r\n\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", echo.len(), echo)
         },
         "user-agent" => {
             let agent = &header["User-Agent"];
+            println!("agent {}",agent);
             format!("HTTP/1.1 200 OK\r\n\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", agent.len(), agent)
         },
         _ => "HTTP/1.1 404 Not Found\r\n\r\n".to_string(),
