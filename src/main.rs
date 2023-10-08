@@ -1,4 +1,7 @@
-use std::{net::TcpListener, io::{Write, Read}};
+use std::{
+    io::{Read, Write},
+    net::TcpListener,
+};
 
 const ADDR: &str = "127.0.0.1:4221";
 
@@ -12,14 +15,22 @@ fn main() {
                 println!("accepted new connection {}", &stream.peer_addr().unwrap());
 
                 let mut buffer = [0; 256];
-
                 stream.read(&mut buffer).unwrap();
 
-                // println!("received data {:?}", buffer);
+                let request_str = std::str::from_utf8(&buffer).unwrap();
+                let lines: Vec<String> = request_str.lines().map(|line| line.to_string()).collect();
+                let request_line = lines.first().unwrap().to_string();
+                let chunks: Vec<&str> = request_line.split_whitespace().collect();
 
-                stream.write_all(b"HTTP/1.1 200 OK\r\n\r\n").unwrap();
+                println!("parsed path {:?}", chunks[1]);
+
+                if chunks[1] == "/" {
+                    stream.write_all(b"HTTP/1.1 200 OK\r\n\r\n").unwrap();
+                } else {
+                    stream.write_all(b"HTTP/1.1 404 Not Found\r\n\r\n").unwrap();
+                }
+
                 stream.flush().unwrap()
-
             }
             Err(e) => {
                 println!("error: {}", e)
