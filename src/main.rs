@@ -30,6 +30,12 @@ fn main() {
                     let content = chunks[1].replace("/echo/", "");
                     let result = format!("{}{}{}{}", "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ", content.len(), "\r\n\r\n", content);
                     stream.write_all(result.as_bytes()).unwrap();
+                } else if chunks[1] == "/user-agent" {
+                    let headers_line: Vec<&String> = lines.iter().filter(|line| line.contains("User-Agent")).collect();
+                    // println!("{:?}", headers_line);
+                    let content = headers_line[0].replace("User-Agent: ", "");
+                    let result = format!("{}{}{}{}", "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ", content.len(), "\r\n\r\n", content);
+                    stream.write_all(result.as_bytes()).unwrap();
                 } else {
                     stream.write_all(b"HTTP/1.1 404 Not Found\r\n\r\n").unwrap();
                 }
